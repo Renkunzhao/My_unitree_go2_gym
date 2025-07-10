@@ -48,7 +48,7 @@ python legged_gym/scripts/train.py --task=go2_jump --headless
 python legged_gym/scripts/train.py --task=go2_handstand --headless
 ```
 ```bash
-python legged_gym/scripts/train.py --task=go2_trot --headless
+python legged_gym/scripts/train.py --task=go2_spring_jump --headless
 ```
 
 handstand 需要把mirror loss注释掉
@@ -83,7 +83,7 @@ python legged_gym/scripts/play.py --task=go2_jump
 ```
 
 ```bash
-python legged_gym/scripts/play.py --task=go2_spring_jump
+python legged_gym/scripts/play.py --task=go2_handstand
 ```
 **说明**：
 
@@ -105,11 +105,11 @@ Play 会导出 Actor 网络，保存于 `logs/{experiment_name}/exported/policie
 
 
 ```bash
-python deploy/deploy_mujoco/sim2sim_GO2.py --load_model logs/go2_jump/exported/policies/policy_1.pt
+python deploy_mujoco/sim2sim_GO2_jump.py --load_model logs/go2_jump/exported/policies/policy_1.pt
 ```
 
 ```bash
-python deploy/deploy_mujoco/sim2sim_GO2.py --load_model logs/go2_trot/exported/policies/policy_1.pt
+python deploy_mujoco/sim2sim_GO2_trot.py --load_model logs/go2_trot/exported/policies/policy_1.pt
 ```
 -
 ## 运行说明

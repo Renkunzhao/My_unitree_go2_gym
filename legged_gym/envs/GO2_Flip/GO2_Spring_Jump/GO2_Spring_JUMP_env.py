@@ -892,6 +892,7 @@ class Go2_Spring_Jump(BaseTask):
     def _reward_base_height_flight(self):
         #跳跃的高度奖励
         base_height_flight = (self.root_states[:, 2] - self.commands[:, 2])
+        print(self.root_states[0,:3])
         rew= torch.exp(-torch.abs(base_height_flight)*10)*self.was_in_flight
 
         return rew 
@@ -917,7 +918,7 @@ class Go2_Spring_Jump(BaseTask):
     
 
     def _reward_success(self):
-        rew=(self.settled_after_init+2*self.was_in_flight+3*self.has_jumped)/6.
+        rew=self.has_jumped
         return rew
 
 

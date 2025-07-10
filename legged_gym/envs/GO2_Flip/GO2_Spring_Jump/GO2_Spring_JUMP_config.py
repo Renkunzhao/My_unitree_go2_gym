@@ -11,7 +11,7 @@ class GO2_Spring_JUMP_Cfg_Yu( LeggedRobotCfg ):
         num_privileged_obs = int(c_frame_stack * single_num_privileged_obs) # 3帧特权观测
         num_actions = 12
         num_envs = 4096
-        episode_length_s = 5 # episode length in seconds
+        episode_length_s = 4 # episode length in seconds
         env_spacing = 3.  # not used with heightfields/trimeshes 
         joint_num = 12
         send_timeouts=True
@@ -168,7 +168,7 @@ class GO2_Spring_JUMP_Cfg_Yu( LeggedRobotCfg ):
             before_setting=0.6
             # post_landing_pos=4.0
             # post_landing_ori=4.0
-            line_z=10.0
+            line_z=6.
             base_height_flight=4.0
             base_height_stance=1.0
             orientation=0.4

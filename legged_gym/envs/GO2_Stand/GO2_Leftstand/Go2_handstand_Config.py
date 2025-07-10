@@ -7,7 +7,7 @@ class GO2Cfg_Handstand_Command( LeggedRobotCfg ):
         c_frame_stack = 3 #critic 网络的堆叠帧数
         num_single_obs = 48 #这个是传感器可以获得到的信息
         num_observations = int(frame_stack * num_single_obs) # 10帧正常的观测
-        single_num_privileged_obs = 70  #不平衡的观测，包含了特权信息，正常传感器获得不到的信息
+        single_num_privileged_obs = 68  #不平衡的观测，包含了特权信息，正常传感器获得不到的信息
         num_privileged_obs = int(c_frame_stack * single_num_privileged_obs) # 3帧特权观测
         num_actions = 12
         num_envs = 4096
@@ -22,8 +22,8 @@ class GO2Cfg_Handstand_Command( LeggedRobotCfg ):
         vertical_scale = 0.005 # [m]
         border_size = 25 # [m]
         curriculum = False
-        static_friction = 0.6
-        dynamic_friction = 0.6
+        static_friction =1.0
+        dynamic_friction = 1.0
         restitution = 0.
         # rough terrain only:
         measure_heights = False
@@ -92,8 +92,8 @@ class GO2Cfg_Handstand_Command( LeggedRobotCfg ):
     class control( LeggedRobotCfg.control ):
         # PD Drive parameters:
         control_type = 'P'
-        stiffness = {'joint': 40.}  # [N*m/rad]
-        damping = {'joint': 1}     # [N*m*s/rad]
+        stiffness = {'joint': 20}  # [N*m/rad]
+        damping = {'joint': 0.5}     # [N*m*s/rad]
         # action scale: target angle = actionScale * action + defaultAngle
         action_scale = 0.25
         # decimation: Number of control action updates @ sim DT per policy DT
@@ -138,7 +138,7 @@ class GO2Cfg_Handstand_Command( LeggedRobotCfg ):
         added_base_mass_range = [-1,1]
 
         randomize_link_mass = True
-        multiplied_link_mass_range = [0.95, 1.05]
+        multiplied_link_mass_range = [0.9, 1.1]
 
         randomize_base_com = True
         added_base_com_range = [-0.02, 0.02]
@@ -165,10 +165,12 @@ class GO2Cfg_Handstand_Command( LeggedRobotCfg ):
     class rewards:
         class scales:
             termination = -0.0
-            tracking_lin_vel = 3.0
-            tracking_ang_vel = 3.0
+            tracking_lin_vel = 3.
+            tracking_ang_vel = 4.
             lin_vel_z = 0.2
             ang_vel_xy = 0.2
+            lin_vel_z_ = 0.2
+            ang_vel_xy_ = 0.2
             handstand_orientation =2.0#0.1 1.0
             torques = -0.0001
             dof_vel = -0.
@@ -179,8 +181,8 @@ class GO2Cfg_Handstand_Command( LeggedRobotCfg ):
             feet_stumble = -0.0 
             action_rate = -0.001
             default_pos =-0.1####
-            default_hip_pos=-0.5
-            # contact=0.4
+            default_hip_pos=-0.05
+            contact=0.5
 
         only_positive_rewards = False # if true negative total rewards are clipped at zero (avoids early termination problems)
         tracking_sigma = 0.25 # tracking reward = exp(-error^2/sigma)
@@ -188,7 +190,7 @@ class GO2Cfg_Handstand_Command( LeggedRobotCfg ):
         soft_dof_vel_limit = 1.
         soft_torque_limit = 1.
         base_height_target = 0.52#0.25
-        cycle_time=1.2
+        cycle_time=0.8
     class normalization:
         class obs_scales:
             lin_vel = 2.0
@@ -261,17 +263,7 @@ class GO2CfgPPO_Handstand_Command(LeggedRobotCfgPPO):
         lam = 0.95
         desired_kl = 0.01
         max_grad_norm = 1.
-        sym_loss = False
-        obs_permutation = [-0.0001, -1, 2, -3, -4,
-                           -5,6,-7,-8,9,-10,
-                       -14,15,16,-11,12,13,-20,21,22,-17,18,19,
-                       -26,27,28,-23,24,25,-32,33,34,-29,30,31,
-                       -38,39,40,-35,36,37,-44,45,46,-41,42,43
-                       ,47]
-        # act_permutation = [-6, -7, 8, 9, 10, -11, -0.0001, -1, 2, 3, 4, -5]#关节电机的对陈关系
-        act_permutation = [-3, 4, 5,-0.0001, 1, 2 , -9, 10, 11,-6, 7, 8,]#关节电机的对陈关系
-        frame_stack = 10
-        sym_coef = 1.0
+
     class runner:
         policy_class_name = 'ActorCritic'
         algorithm_class_name = 'PPO'

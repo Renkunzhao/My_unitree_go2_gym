@@ -131,11 +131,8 @@ class Go2_stand_Robot(BaseTask):
         self.base_ang_vel[:] = quat_rotate_inverse(self.base_quat, self.root_states[:, 10:13])
         self.projected_gravity[:] = quat_rotate_inverse(self.base_quat, self.gravity_vec)
 
-        period = 1.2
-        offset = 0.5
         self._post_physics_step_callback()
 
-        
         # compute observations, rewards, resets, ...
         self.check_termination()
         self.compute_reward()
@@ -236,7 +233,7 @@ class Go2_stand_Robot(BaseTask):
             self.episode_sums["termination"] += rew
     def _get_phase(self):
         cycle_time = self.cfg.rewards.cycle_time
-        phase = self.episode_length_buf * self.dt / cycle_time
+        phase = (self.episode_length_buf * self.dt%cycle_time) / cycle_time
         return phase
 
     def _get_gait_phase(self):
@@ -271,8 +268,6 @@ class Go2_stand_Robot(BaseTask):
             self.base_lin_vel * self.obs_scales.lin_vel,  # 3
             self.base_ang_vel * self.obs_scales.ang_vel,  # 3
             self.base_euler_xyz *self.cfg.normalization.obs_scales.quat,  # 3
-            self.env_frictions,  # 1
-            self.body_mass / 10.,  # 1
             self.stance_mask,  # 2
             contact_mask,  # 2    
             
@@ -846,9 +841,6 @@ class Go2_stand_Robot(BaseTask):
         env_upper = gymapi.Vec3(0., 0., 0.)
         self.actor_handles = []
         self.envs = []
-        self.env_frictions = torch.zeros(self.num_envs, 1, dtype=torch.float32, device=self.device)
-
-        self.body_mass = torch.zeros(self.num_envs, 1, dtype=torch.float32, device=self.device, requires_grad=False)
 
         for i in range(self.num_envs):
             # create env instance
@@ -1012,11 +1004,17 @@ class Go2_stand_Robot(BaseTask):
     #------------ reward functions----------------
     def _reward_lin_vel_z(self):
         # Penalize z axis base linear velocity
-        return torch.exp(-torch.abs(self.base_lin_vel[:, 0])*10)
+        return torch.exp(-torch.abs(self.base_lin_vel[:, 0])*10)*(torch.mean(self.rew_hanstand)>0.8)
     
     def _reward_ang_vel_xy(self):
-        return torch.exp(-torch.norm(torch.abs(self.base_ang_vel[:, 1:3]), dim=1))
-
+        return torch.exp(-torch.norm(torch.abs(self.base_ang_vel[:, 1:3]), dim=1))*(torch.mean(self.rew_hanstand)>0.8)
+    
+    def _reward_lin_vel_z_(self):
+        # Penalize z axis base linear velocity
+        return self.base_lin_vel[:, 2]*(torch.mean(self.rew_hanstand)<0.8)
+    
+    def _reward_ang_vel_xy_(self):
+        return -self.base_ang_vel[:, 1]*(torch.mean(self.rew_hanstand)<0.8)
     def _reward_base_height(self):
         # Penalize base height away from target
         base_height = torch.mean(self.root_states[:, 2].unsqueeze(1) - self.measured_heights, dim=1)
@@ -1065,10 +1063,8 @@ class Go2_stand_Robot(BaseTask):
 
     def _reward_tracking_lin_vel(self):
         # Tracking of linear velocity commands (xy axes)
-        # lin_vel_error = torch.sum(torch.square(self.commands[:, :2] - self.base_lin_vel[:, :2]), dim=1)
         x_error = torch.square(self.commands[:, 0] + self.base_lin_vel[:, 2])#站立起来的话，本体的x轴对应世界系的z，本体z轴对应世界系的-x
         y_error = torch.square(self.commands[:, 1] - self.base_lin_vel[:, 1])
-        # print(torch.mean(self.rew_hanstand),self.rew_hanstand.shape)
         return torch.exp(-(y_error+x_error)/self.cfg.rewards.tracking_sigma)*(torch.mean(self.rew_hanstand)>0.8)
     
     def _reward_tracking_ang_vel(self):
@@ -1078,8 +1074,6 @@ class Go2_stand_Robot(BaseTask):
         return torch.exp(-ang_vel_error/self.cfg.rewards.tracking_sigma)*(torch.mean(self.rew_hanstand)>0.8)
     
     def _reward_default_pos(self):
-        # Penalize motion at zero commands
-        # print(torch.sum(torch.abs(self.dof_pos - self.descire_joint_pos), dim=1)[0])
         return torch.sum(torch.abs(self.dof_pos - self.descire_joint_pos), dim=1)#*(torch.mean(self.rew_hanstand)>0.8)#*(torch.mean(self.rew_hanstand)>0.8)#*(self.stand_command.view(-1)>0) #* (torch.norm(self.commands[:, :2], dim=1) < 0.1)
     
     def _reward_default_hip_pos(self):
@@ -1103,13 +1097,8 @@ class Go2_stand_Robot(BaseTask):
         contact = torch.norm(self.contact_forces[:, self.feet_name_reward_indices , :], dim=-1) > 1.0
         # 如果所有足部均未接触地面，reward = 1；也可以使用 mean 得到部分奖励
         reward = (~contact).float().prod(dim=1)
-        
-        # print(self.stand_command[0])
-        return reward*(self.stand_command.view(-1)>0)
+        return reward#*(self.stand_command.view(-1)>0)
     
-        # return 0
-
-
     def _reward_handstand_orientation(self):
         """
         姿态奖励：
@@ -1117,14 +1106,12 @@ class Go2_stand_Robot(BaseTask):
         2. 目标重力方向通过配置传入（例如 [1, 0, 0] 表示目标为竖直向上）。
         3. 对比当前和目标重力方向的 L2 距离，偏差越大惩罚越大。
         """
-        # self.rew_hanstand=torch.exp(-torch.sum((self.projected_gravity - self.target_gravity) ** 2, dim=1))
-    
         return torch.exp(-torch.sum((self.projected_gravity - self.target_gravity) ** 2, dim=1))
 
     def _reward_contact(self):
         res = torch.zeros(self.num_envs, dtype=torch.float, device=self.device)
-        for i in range(2):
-            contact = self.contact_forces[:, self.contact_foot_indices[i], 2] > 1
-            res += contact == self.stance_mask[:, i] 
-        return res#*(torch.mean(self.rew_hanstand)>0.8)
+        contact = self.contact_forces[:, self.contact_foot_indices, 2] > 1
+        # res = (contact == self.stance_mask )
+        result = torch.all(contact == self.stance_mask, dim=1).long()
+        return result*(torch.mean(self.rew_hanstand)>0.8)
     
