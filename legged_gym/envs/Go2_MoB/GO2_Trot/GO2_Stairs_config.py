@@ -143,8 +143,8 @@ class GO2_Stairs_Cfg_Yu( LeggedRobotCfg ):
     class rewards:
         class scales:
             termination = -0.0
-            tracking_lin_vel = 4.
-            tracking_ang_vel = 4.
+            tracking_lin_vel = 2.
+            tracking_ang_vel = 2.
             lin_vel_z = 0.2
             ang_vel_xy = -0.02
             orientation = 0.2
@@ -153,10 +153,11 @@ class GO2_Stairs_Cfg_Yu( LeggedRobotCfg ):
             dof_vel=-0.0005
             collision = -1.
             action_rate = -0.01
-            base_height=0.2
-            trot=1.0
-            feet_clearance=0.5
+            base_height=0.25
+            trot=0.8
+            feet_clearance=0.4
             default_pos=-0.15
+            default_hip_pos=-0.15
             stumble=-6.
 
         only_positive_rewards = True # if true negative total rewards are clipped at zero (avoids early termination problems)

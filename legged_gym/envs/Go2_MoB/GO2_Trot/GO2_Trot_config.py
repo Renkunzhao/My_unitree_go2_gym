@@ -40,7 +40,7 @@ class GO2_Trot_Cfg_Yu( LeggedRobotCfg ):
         slope_treshold = 0.75 # slopes above this threshold will be corrected to vertical surfaces
     class commands:
         curriculum = True
-        max_curriculum = 1.5
+        max_curriculum = 2
         num_commands = 4 # default: lin_vel_x, lin_vel_y, ang_vel_yaw, heading (in heading mode ang_vel_yaw is recomputed from heading error)
         resampling_time = 5. # time before command are changed[s]
         heading_command = False # if true: compute ang vel command from heading error

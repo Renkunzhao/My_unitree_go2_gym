@@ -158,6 +158,7 @@ class Go2_Spring_Jump(BaseTask):
         self.landing_poses[torch.logical_and(has_jumped,~self.has_jumped)] = self.root_states[torch.logical_and(has_jumped,~self.has_jumped),:7]
         # Only count the first time flight is achieved:
         self.has_jumped[has_jumped] = True 
+        self.jump_command[has_jumped] = 0.0 #已经跳过，不再跳
 
     def check_termination(self):
         """ Check if environments need to be reset
@@ -223,6 +224,7 @@ class Go2_Spring_Jump(BaseTask):
             self.obs_history[i][env_ids] *= 0
         for i in range(self.critic_history.maxlen):
             self.critic_history[i][env_ids] *= 0
+        self.jump_command[env_ids] = 1
     def compute_reward(self):
         """ Compute rewards
             Calls each reward function which had a non-zero scale (processed in self._prepare_reward_function())
@@ -269,6 +271,7 @@ class Go2_Spring_Jump(BaseTask):
 
         self.privileged_obs_buf = torch.cat((
             self.command_input,  # 2 + 3 控制输入 ，相位，目标速度，角速度
+            # self.jump_command,
             (self.dof_pos - self.default_dof_pos) * self.obs_scales.dof_pos,  # 12  当前关节位置与默认关节位置之差
             self.dof_pos * self.obs_scales.dof_pos,  # 12
             self.dof_vel * self.obs_scales.dof_vel,  # 速度乘以缩放因子 12
@@ -299,6 +302,7 @@ class Go2_Spring_Jump(BaseTask):
             self.obs_imu,#6 角速度，欧拉角XYZ
             self.obs_motor,#24
             self.actions,   # 12
+            # self.jump_command
         ), dim=-1)
         # print("obs_buf",obs_buf.shape)
         if self.add_noise:  
@@ -628,6 +632,7 @@ class Go2_Spring_Jump(BaseTask):
 
         self.default_dof_pos = torch.zeros(self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
         self.lie_joint_pos= torch.zeros(self.num_dof, dtype=torch.float, device=self.device, requires_grad=False)
+        self.jump_command=torch.zeros(self.num_envs, dtype=torch.float, device=self.device, requires_grad=False)
         for i in range(self.num_dofs):
             name = self.dof_names[i]
             angle = self.cfg.init_state.default_joint_angles[name]
@@ -892,8 +897,8 @@ class Go2_Spring_Jump(BaseTask):
     def _reward_base_height_flight(self):
         #跳跃的高度奖励
         base_height_flight = (self.root_states[:, 2] - self.commands[:, 2])
-        print(self.root_states[0,:3])
-        rew= torch.exp(-torch.abs(base_height_flight)*10)*self.was_in_flight
+        # print(self.root_states[0,:3])
+        rew= torch.exp(-torch.abs(base_height_flight)*10)*self.was_in_flight*(~self.has_jumped)
 
         return rew 
     
@@ -917,9 +922,9 @@ class Go2_Spring_Jump(BaseTask):
         return rew
     
 
-    def _reward_success(self):
-        rew=self.has_jumped
-        return rew
+    # def _reward_success(self):
+    #     rew=self.has_jumped
+    #     return rew
 
 
     def _reward_torques(self):

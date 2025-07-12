@@ -170,11 +170,10 @@ class GO2_Spring_JUMP_Cfg_Yu( LeggedRobotCfg ):
             # post_landing_ori=4.0
             line_z=6.
             base_height_flight=4.0
-            base_height_stance=1.0
+            base_height_stance=6.
             orientation=0.4
             default_pose_air=-0.2
             ang_vel_xy=0.2
-            success=1.5
 
             torques=-0.0001
             dof_pos_limits=-1.

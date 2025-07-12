@@ -7,6 +7,9 @@ from legged_gym.envs.Go2_MoB.GO2_JUMP.GO2_JUMP_config import GO2_JUMP_Cfg_Yu,GO2
 from legged_gym.envs.Go2_MoB.GO2_Trot.GO2_Trot import GO2_Trot_Robot
 from legged_gym.envs.Go2_MoB.GO2_Trot.GO2_Trot_config import GO2_Trot_Cfg_Yu,GO2_Trot_PPO_Yu
 
+from legged_gym.envs.Go2_MoB.GO2_Trot.GO2_Stairs import GO2_Stairs_Robot
+from legged_gym.envs.Go2_MoB.GO2_Trot.GO2_Stairs_config import GO2_Stairs_Cfg_Yu,GO2_Stairs_PPO_Yu
+
 from legged_gym.envs.GO2_Flip.GO2_BackFlip.GO2_BackFlip_env import Go2_BackFlip
 from legged_gym.envs.GO2_Flip.GO2_BackFlip.GO2_BackFlip_Config import GO2_BackFlip_Cfg_Yu, GO2_BackFlip_PPO_Yu
 
@@ -28,6 +31,7 @@ from legged_gym.envs.GO2_Flip.GO2_Spring_Jump.GO2_Spring_JUMP_config import GO2_
 
 
 task_registry.register( "go2_trot", GO2_Trot_Robot, GO2_Trot_Cfg_Yu(), GO2_Trot_PPO_Yu())
+task_registry.register( "go2_stairs", GO2_Stairs_Robot, GO2_Stairs_Cfg_Yu(), GO2_Stairs_PPO_Yu())
 task_registry.register( "go2_jump", GO2_JUMP_Robot, GO2_JUMP_Cfg_Yu(), GO2_JUMP_PPO_Yu())
 task_registry.register( "go2_handstand", Go2_stand, GO2Cfg_Handstand(), GO2CfgPPO_Handstand())
 task_registry.register( "go2_handstand_command", Go2_stand_Robot, GO2Cfg_Handstand_Command(), GO2CfgPPO_Handstand_Command())
